@@ -1,3 +1,10 @@
+import episodeArt1 from "@/assets/episode-art-1.jpg";
+import episodeArt2 from "@/assets/episode-art-2.jpg";
+import episodeArt3 from "@/assets/episode-art-3.jpg";
+import episodeArt4 from "@/assets/episode-art-4.jpg";
+import episodeArt5 from "@/assets/episode-art-5.jpg";
+import episodeArt6 from "@/assets/episode-art-6.jpg";
+
 export interface Episode {
   id: string;
   slug: string;
