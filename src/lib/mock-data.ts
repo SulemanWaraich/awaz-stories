@@ -54,7 +54,7 @@ export const episodes: Episode[] = [
     titleUrdu: "اپنے اندر گھر ڈھونڈنا",
     description: "A deeply personal conversation about what it means to feel at home — not in a place, but within yourself. We explore the journey of self-acceptance, the weight of displacement, and the quiet courage it takes to build a sense of belonging from the inside out.\n\nOur guest shares their experience of leaving behind everything familiar and discovering that home was never a location — it was a feeling they had to learn to carry with them.\n\n> \"I spent years searching for a place that felt right, until I realized the feeling I was chasing lived inside me all along.\"\n\nThis episode touches on themes of migration, identity, and the slow, beautiful work of becoming whole.",
     hostName: "Amara Shah",
-    artworkUrl: "",
+    artworkUrl: episodeArt1,
     audioUrl: SAMPLE_AUDIO,
     durationSeconds: 2340,
     category: "Identity",
