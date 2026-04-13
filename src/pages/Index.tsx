@@ -47,6 +47,15 @@ export default function Index() {
                 Become a Creator
               </button>
             </motion.div>
+            <motion.img
+              {...fadeUp}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              src={heroIllustration}
+              alt="Person listening peacefully with headphones"
+              className="mx-auto mt-12 w-64 md:w-80"
+              width={1024}
+              height={1024}
+            />
           </div>
         </div>
         {/* Decorative bottom wave */}
