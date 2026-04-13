@@ -6,6 +6,10 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import heroIllustration from "@/assets/hero-illustration.jpg";
+import { useAudioStore } from "@/stores/audio-store";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
