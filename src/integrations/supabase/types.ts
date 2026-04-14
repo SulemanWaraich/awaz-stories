@@ -327,6 +327,47 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string | null
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          status: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       series: {
         Row: {
           artwork_url: string | null
