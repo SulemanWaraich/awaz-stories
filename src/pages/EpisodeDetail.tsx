@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark } from "lucide-react";
+import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark, Flag, MoreHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,8 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { CommentsSection } from "@/components/CommentsSection";
+import { ReportModal } from "@/components/ReportModal";
 import { toast } from "sonner";
 
 export default function EpisodeDetail() {
@@ -18,8 +20,8 @@ export default function EpisodeDetail() {
   const queryClient = useQueryClient();
   const { currentEpisode, isPlaying, play, togglePlay } = useAudioStore();
   const [showWarning, setShowWarning] = useState(true);
+  const [reportOpen, setReportOpen] = useState(false);
 
-  // Try DB first, fallback to mock
   const { data: dbEpisode } = useQuery({
     queryKey: ["episode", slug],
     queryFn: async () => {
@@ -33,7 +35,6 @@ export default function EpisodeDetail() {
     enabled: !!slug,
   });
 
-  // Construct episode from DB or mock
   const mockEp = mockEpisodes.find((e) => e.slug === slug);
   const episode = dbEpisode ? {
     id: dbEpisode.id,
@@ -57,7 +58,6 @@ export default function EpisodeDetail() {
     seriesTitle: undefined,
   } : mockEp;
 
-  // Like status
   const { data: isLiked } = useQuery({
     queryKey: ["liked", episode?.id, user?.id],
     queryFn: async () => {
@@ -76,7 +76,6 @@ export default function EpisodeDetail() {
     enabled: !!episode,
   });
 
-  // Bookmark status
   const { data: isBookmarked } = useQuery({
     queryKey: ["bookmarked", episode?.id, user?.id],
     queryFn: async () => {
@@ -117,7 +116,6 @@ export default function EpisodeDetail() {
     },
   });
 
-  // Related episodes (from mock for now)
   const relatedEpisodes = mockEpisodes.filter((e) => e.slug !== slug).slice(0, 3);
 
   if (!episode) {
@@ -125,8 +123,10 @@ export default function EpisodeDetail() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-20 text-center">
-          <h1 className="font-heading text-2xl font-bold">Episode not found</h1>
-          <Link to="/explore" className="mt-4 inline-block text-primary hover:underline">← Back to Explore</Link>
+          <Headphones className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+          <h1 className="mb-2 font-heading text-2xl font-bold">Episode not found</h1>
+          <p className="mb-4 text-muted-foreground">This story may have moved or doesn't exist.</p>
+          <Link to="/explore" className="inline-block rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground">← Back to Explore</Link>
         </div>
       </div>
     );
@@ -139,7 +139,6 @@ export default function EpisodeDetail() {
     if (currentEpisode?.id === episode.id) togglePlay();
     else {
       play(episode);
-      // Record play event
       if (user && dbEpisode) {
         supabase.from("play_events").insert({
           user_id: user.id,
@@ -153,6 +152,9 @@ export default function EpisodeDetail() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+
+      {/* Report modal */}
+      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} contentType="episode" contentId={episode.id} />
 
       {/* Content Warning Modal */}
       <AnimatePresence>
@@ -209,7 +211,7 @@ export default function EpisodeDetail() {
             <div className="sticky top-24">
               <div className="mb-6 aspect-square overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 to-accent/20 shadow-warm">
                 {episode.artworkUrl ? (
-                  <img src={episode.artworkUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={episode.artworkUrl} alt={episode.title} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <Headphones className="h-20 w-20 text-primary/20" />
@@ -220,32 +222,40 @@ export default function EpisodeDetail() {
               <button
                 onClick={handlePlay}
                 className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
+                aria-label={isCurrentlyPlaying ? "Pause episode" : "Play episode"}
               >
                 {isCurrentlyPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
                 {isCurrentlyPlaying ? "Pause" : "Play Episode"}
               </button>
 
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => likeMutation.mutate()}
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-colors ${
-                    isLiked ? "bg-red-50 text-red-500" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-all ${
+                    isLiked ? "bg-red-50 text-red-500 dark:bg-red-500/10" : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
+                  aria-label="Like"
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                  <Heart className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`} />
                   {likeCount ?? episode.likeCount}
                 </button>
-                <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80">
+                <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80" aria-label="Share">
                   <Share2 className="h-4 w-4" /> Share
                 </button>
                 <button
                   onClick={() => bookmarkMutation.mutate()}
-                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-all ${
                     isBookmarked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
+                  aria-label="Bookmark"
                 >
-                  <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} /> Save
+                  <Bookmark className={`h-4 w-4 transition-transform ${isBookmarked ? "fill-current scale-110" : ""}`} /> Save
                 </button>
+                {user && (
+                  <button onClick={() => setReportOpen(true)} className="rounded-xl bg-muted p-2.5 text-muted-foreground transition-colors hover:bg-muted/80" aria-label="Report episode">
+                    <Flag className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -260,7 +270,7 @@ export default function EpisodeDetail() {
                 {episode.language}
               </span>
               {episode.hasContentWarning && (
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">⚠ Content Warning</span>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">⚠ Content Warning</span>
               )}
             </div>
 
@@ -309,6 +319,9 @@ export default function EpisodeDetail() {
                 </p>
               </div>
             )}
+
+            {/* Comments */}
+            <CommentsSection episodeId={episode.id} />
           </motion.div>
         </div>
 
