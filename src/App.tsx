@@ -4,11 +4,25 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
 const EpisodeDetail = lazy(() => import("./pages/EpisodeDetail"));
+const Signup = lazy(() => import("./pages/auth/Signup"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const DashboardLayout = lazy(() => import("./pages/dashboard/DashboardLayout"));
+const DashboardOverview = lazy(() => import("./pages/dashboard/DashboardOverview"));
+const DashboardEpisodes = lazy(() => import("./pages/dashboard/DashboardEpisodes"));
+const DashboardUpload = lazy(() => import("./pages/dashboard/DashboardUpload"));
+const DashboardAnalytics = lazy(() => import("./pages/dashboard/DashboardAnalytics"));
+const DashboardProfileEdit = lazy(() => import("./pages/dashboard/DashboardProfileEdit"));
+const DashboardSettings = lazy(() => import("./pages/dashboard/DashboardSettings"));
+const ListenerProfile = lazy(() => import("./pages/ListenerProfile"));
+const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -25,15 +39,31 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/episode/:slug" element={<EpisodeDetail />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <GlobalAudioPlayer />
+        <AuthProvider>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/episode/:slug" element={<EpisodeDetail />} />
+              <Route path="/auth/signup" element={<Signup />} />
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/profile" element={<ListenerProfile />} />
+              <Route path="/creator/:id" element={<CreatorProfile />} />
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<DashboardOverview />} />
+                <Route path="episodes" element={<DashboardEpisodes />} />
+                <Route path="upload" element={<DashboardUpload />} />
+                <Route path="analytics" element={<DashboardAnalytics />} />
+                <Route path="profile" element={<DashboardProfileEdit />} />
+                <Route path="settings" element={<DashboardSettings />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <GlobalAudioPlayer />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
