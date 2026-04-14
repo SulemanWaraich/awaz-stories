@@ -6,10 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
+import { AnimatePresence } from "framer-motion";
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
 const EpisodeDetail = lazy(() => import("./pages/EpisodeDetail"));
+const SeriesDetail = lazy(() => import("./pages/SeriesDetail"));
 const Signup = lazy(() => import("./pages/auth/Signup"));
 const Login = lazy(() => import("./pages/auth/Login"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
@@ -45,6 +47,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/episode/:slug" element={<EpisodeDetail />} />
+              <Route path="/series/:slug" element={<SeriesDetail />} />
               <Route path="/auth/signup" element={<Signup />} />
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
