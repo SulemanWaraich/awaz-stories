@@ -1,19 +1,124 @@
 import { useParams, Link } from "react-router-dom";
-import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle } from "lucide-react";
+import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { episodes, formatDurationLong } from "@/lib/mock-data";
-import { useAudioStore } from "@/stores/audio-store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { episodes as mockEpisodes, formatDurationLong } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
+import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { toast } from "sonner";
 
 export default function EpisodeDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const episode = episodes.find((e) => e.slug === slug);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { currentEpisode, isPlaying, play, togglePlay } = useAudioStore();
   const [showWarning, setShowWarning] = useState(true);
-  const [liked, setLiked] = useState(false);
+
+  // Try DB first, fallback to mock
+  const { data: dbEpisode } = useQuery({
+    queryKey: ["episode", slug],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("episodes")
+        .select("*, profiles!episodes_creator_id_fkey(display_name, avatar_url, id)")
+        .eq("slug", slug!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!slug,
+  });
+
+  // Construct episode from DB or mock
+  const mockEp = mockEpisodes.find((e) => e.slug === slug);
+  const episode = dbEpisode ? {
+    id: dbEpisode.id,
+    slug: dbEpisode.slug,
+    title: dbEpisode.title,
+    titleUrdu: dbEpisode.title_urdu || undefined,
+    description: dbEpisode.description || "",
+    hostName: (dbEpisode.profiles as any)?.display_name || "Creator",
+    hostId: (dbEpisode.profiles as any)?.id,
+    artworkUrl: dbEpisode.artwork_url || "",
+    audioUrl: dbEpisode.audio_url || "",
+    durationSeconds: dbEpisode.duration_seconds || 0,
+    category: "Episode",
+    categoryColor: "bg-muted text-muted-foreground",
+    language: dbEpisode.language || "en",
+    playCount: dbEpisode.play_count || 0,
+    likeCount: 0,
+    publishedAt: dbEpisode.publish_at || dbEpisode.created_at || "",
+    hasContentWarning: dbEpisode.has_content_warning || false,
+    warningText: dbEpisode.warning_text || undefined,
+    seriesTitle: undefined,
+  } : mockEp;
+
+  // Like status
+  const { data: isLiked } = useQuery({
+    queryKey: ["liked", episode?.id, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("likes").select("id").eq("user_id", user!.id).eq("episode_id", episode!.id).maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && !!episode,
+  });
+
+  const { data: likeCount } = useQuery({
+    queryKey: ["like-count", episode?.id],
+    queryFn: async () => {
+      const { count } = await supabase.from("likes").select("*", { count: "exact", head: true }).eq("episode_id", episode!.id);
+      return count || 0;
+    },
+    enabled: !!episode,
+  });
+
+  // Bookmark status
+  const { data: isBookmarked } = useQuery({
+    queryKey: ["bookmarked", episode?.id, user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("bookmarks").select("id").eq("user_id", user!.id).eq("episode_id", episode!.id).maybeSingle();
+      return !!data;
+    },
+    enabled: !!user && !!episode,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) { toast.error("Sign in to like"); return; }
+      if (isLiked) {
+        await supabase.from("likes").delete().eq("user_id", user.id).eq("episode_id", episode!.id);
+      } else {
+        await supabase.from("likes").insert({ user_id: user.id, episode_id: episode!.id });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["liked", episode?.id] });
+      queryClient.invalidateQueries({ queryKey: ["like-count", episode?.id] });
+    },
+  });
+
+  const bookmarkMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) { toast.error("Sign in to save"); return; }
+      if (isBookmarked) {
+        await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("episode_id", episode!.id);
+        toast.success("Removed from saved");
+      } else {
+        await supabase.from("bookmarks").insert({ user_id: user.id, episode_id: episode!.id });
+        toast.success("Saved to bookmarks");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarked", episode?.id] });
+    },
+  });
+
+  // Related episodes (from mock for now)
+  const relatedEpisodes = mockEpisodes.filter((e) => e.slug !== slug).slice(0, 3);
 
   if (!episode) {
     return (
@@ -28,12 +133,21 @@ export default function EpisodeDetail() {
   }
 
   const isCurrentlyPlaying = currentEpisode?.id === episode.id && isPlaying;
-  const relatedEpisodes = episodes.filter((e) => e.id !== episode.id).slice(0, 3);
 
   const handlePlay = () => {
     if (episode.hasContentWarning && showWarning) return;
     if (currentEpisode?.id === episode.id) togglePlay();
-    else play(episode);
+    else {
+      play(episode);
+      // Record play event
+      if (user && dbEpisode) {
+        supabase.from("play_events").insert({
+          user_id: user.id,
+          episode_id: episode.id,
+          duration_played_seconds: 0,
+        }).then(() => {});
+      }
+    }
   };
 
   return (
@@ -113,19 +227,24 @@ export default function EpisodeDetail() {
 
               <div className="flex items-center justify-center gap-4">
                 <button
-                  onClick={() => setLiked(!liked)}
+                  onClick={() => likeMutation.mutate()}
                   className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-colors ${
-                    liked ? "bg-red-50 text-red-500" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    isLiked ? "bg-red-50 text-red-500" : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
-                  {episode.likeCount + (liked ? 1 : 0)}
+                  <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                  {likeCount ?? episode.likeCount}
                 </button>
                 <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80">
                   <Share2 className="h-4 w-4" /> Share
                 </button>
-                <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80">
-                  <Download className="h-4 w-4" /> Save
+                <button
+                  onClick={() => bookmarkMutation.mutate()}
+                  className={`flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm transition-colors ${
+                    isBookmarked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} /> Save
                 </button>
               </div>
             </div>
@@ -153,17 +272,21 @@ export default function EpisodeDetail() {
             )}
 
             <div className="mb-8 flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{episode.hostName}</span>
+              {(episode as any).hostId ? (
+                <Link to={`/creator/${(episode as any).hostId}`} className="font-medium text-foreground hover:text-primary">{episode.hostName}</Link>
+              ) : (
+                <span className="font-medium text-foreground">{episode.hostName}</span>
+              )}
               <span>·</span>
               <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{formatDurationLong(episode.durationSeconds)}</span>
               <span>·</span>
               <span>{new Date(episode.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
             </div>
 
-            {episode.seriesTitle && (
+            {(episode as any).seriesTitle && (
               <div className="mb-6 rounded-2xl bg-sage-light p-4">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Part of series</p>
-                <p className="font-heading text-base font-semibold">{episode.seriesTitle}</p>
+                <p className="font-heading text-base font-semibold">{(episode as any).seriesTitle}</p>
               </div>
             )}
 
@@ -176,12 +299,12 @@ export default function EpisodeDetail() {
               ))}
             </div>
 
-            {/* Crisis footer for mental health */}
+            {/* Crisis footer */}
             {episode.category === "Mental Health" && (
               <div className="mt-8 rounded-2xl border border-border bg-card p-6">
                 <p className="mb-2 text-sm font-medium">If you need support</p>
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-primary">Umang Pakistan Helpline: 0311-7786264</span> · 
+                  <span className="font-medium text-primary">Umang Pakistan Helpline: 0311-7786264</span> ·
                   <span className="ml-2 font-medium text-primary">iCall India: 9152987821</span>
                 </p>
               </div>
@@ -189,7 +312,7 @@ export default function EpisodeDetail() {
           </motion.div>
         </div>
 
-        {/* Related Episodes */}
+        {/* Related */}
         <section className="mt-20">
           <h2 className="mb-8 font-heading text-2xl font-bold">You might also like</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
