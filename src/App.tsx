@@ -10,6 +10,7 @@ import { AnimatePresence } from "framer-motion";
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
+const About = lazy(() => import("./pages/About"));
 const EpisodeDetail = lazy(() => import("./pages/EpisodeDetail"));
 const SeriesDetail = lazy(() => import("./pages/SeriesDetail"));
 const Signup = lazy(() => import("./pages/auth/Signup"));
@@ -46,6 +47,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/our-story" element={<About />} />
               <Route path="/episode/:slug" element={<EpisodeDetail />} />
               <Route path="/series/:slug" element={<SeriesDetail />} />
               <Route path="/auth/signup" element={<Signup />} />

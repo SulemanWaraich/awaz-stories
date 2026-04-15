@@ -30,12 +30,15 @@ export function EpisodeCard({ episode, index = 0 }: Props) {
           </div>
         )}
         {/* Play overlay */}
-        <button
-          onClick={(e) => { e.preventDefault(); play(episode); }}
-          className="absolute bottom-3 right-3 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:scale-110"
-        >
-          <Play className="h-5 w-5 ml-0.5" />
-        </button>
+        {episode.audioUrl ? (
+          <button
+            onClick={(e) => { e.preventDefault(); play(episode); }}
+            className="absolute bottom-3 right-3 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:scale-110"
+            aria-label="Play episode"
+          >
+            <Play className="h-5 w-5 ml-0.5" />
+          </button>
+        ) : null}
       </Link>
 
       {/* Info */}

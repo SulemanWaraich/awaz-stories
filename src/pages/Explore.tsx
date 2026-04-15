@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Loader2, Layers } from "lucide-react";
+import { Search, Loader2, Layers, Headphones } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { episodes as mockEpisodes, categories as mockCategories } from "@/lib/mock-data";
+import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -21,7 +21,6 @@ export default function Explore() {
   const [sortBy, setSortBy] = useState(initialSort);
   const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Sync URL params
   useEffect(() => {
     const params: Record<string, string> = {};
     if (search) params.q = search;
@@ -63,34 +62,28 @@ export default function Explore() {
     enabled: activeTab === "series",
   });
 
-  const categories = dbCategories && dbCategories.length > 0 ? dbCategories : mockCategories;
-  const categoryNames = dbCategories && dbCategories.length > 0
-    ? dbCategories.map((c) => c.name)
-    : mockCategories.map((c) => c.name);
+  const categoryNames = (dbCategories || []).map((c) => c.name);
 
-  const allEpisodes = useMemo(() => {
-    if (dbEpisodes && dbEpisodes.length > 0) {
-      return dbEpisodes.map((ep) => ({
-        id: ep.id,
-        slug: ep.slug,
-        title: ep.title,
-        titleUrdu: ep.title_urdu || undefined,
-        description: ep.description || "",
-        hostName: (ep.profiles as any)?.display_name || "Creator",
-        artworkUrl: ep.artwork_url || "",
-        audioUrl: ep.audio_url || "",
-        durationSeconds: ep.duration_seconds || 0,
-        category: dbCategories?.find((c) => ep.category_ids?.includes(c.id))?.name || "Uncategorized",
-        categoryColor: "bg-muted text-muted-foreground",
-        language: ep.language || "en",
-        playCount: ep.play_count || 0,
-        likeCount: 0,
-        publishedAt: ep.publish_at || ep.created_at || "",
-        hasContentWarning: ep.has_content_warning || false,
-        warningText: ep.warning_text || undefined,
-      }));
-    }
-    return mockEpisodes;
+  const allEpisodes: Episode[] = useMemo(() => {
+    return (dbEpisodes || []).map((ep) => ({
+      id: ep.id,
+      slug: ep.slug,
+      title: ep.title,
+      titleUrdu: ep.title_urdu || undefined,
+      description: ep.description || "",
+      hostName: (ep.profiles as any)?.display_name || "Creator",
+      artworkUrl: ep.artwork_url || "",
+      audioUrl: ep.audio_url || "",
+      durationSeconds: ep.duration_seconds || 0,
+      category: dbCategories?.find((c) => ep.category_ids?.includes(c.id))?.name || "Uncategorized",
+      categoryColor: "bg-muted text-muted-foreground",
+      language: ep.language || "en",
+      playCount: ep.play_count || 0,
+      likeCount: 0,
+      publishedAt: ep.publish_at || ep.created_at || "",
+      hasContentWarning: ep.has_content_warning || false,
+      warningText: ep.warning_text || undefined,
+    }));
   }, [dbEpisodes, dbCategories]);
 
   const filtered = useMemo(() => {
@@ -202,9 +195,13 @@ export default function Explore() {
             </div>
           ) : (
             <div className="py-20 text-center">
-              <Layers className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
-              <p className="mb-2 text-lg font-medium text-muted-foreground">No episodes found{search ? ` for "${search}"` : ""}</p>
-              <p className="mb-4 text-sm text-muted-foreground">Try a different filter or search term.</p>
+              <Headphones className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+              <p className="mb-2 text-lg font-medium text-muted-foreground">
+                {search ? `No episodes found for "${search}"` : "No stories yet"}
+              </p>
+              <p className="mb-4 text-sm text-muted-foreground">
+                {search || selectedCategory !== "All" ? "Try a different filter or search term." : "Be the first to share your voice."}
+              </p>
               {(search || selectedCategory !== "All") && (
                 <button onClick={() => { setSearch(""); setSelectedCategory("All"); }} className="rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground">Clear filters</button>
               )}
