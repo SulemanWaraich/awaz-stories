@@ -1,11 +1,12 @@
 import { useParams, Link } from "react-router-dom";
-import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark, Flag, MoreHorizontal } from "lucide-react";
+import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark, Flag, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { episodes as mockEpisodes, formatDurationLong } from "@/lib/mock-data";
+import { formatDurationLong } from "@/lib/mock-data";
+import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
@@ -22,7 +23,7 @@ export default function EpisodeDetail() {
   const [showWarning, setShowWarning] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
 
-  const { data: dbEpisode } = useQuery({
+  const { data: dbEpisode, isLoading } = useQuery({
     queryKey: ["episode", slug],
     queryFn: async () => {
       const { data } = await supabase
@@ -35,8 +36,15 @@ export default function EpisodeDetail() {
     enabled: !!slug,
   });
 
-  const mockEp = mockEpisodes.find((e) => e.slug === slug);
-  const episode = dbEpisode ? {
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("*");
+      return data || [];
+    },
+  });
+
+  const episode: (Episode & { hostId?: string }) | null = dbEpisode ? {
     id: dbEpisode.id,
     slug: dbEpisode.slug,
     title: dbEpisode.title,
@@ -47,7 +55,7 @@ export default function EpisodeDetail() {
     artworkUrl: dbEpisode.artwork_url || "",
     audioUrl: dbEpisode.audio_url || "",
     durationSeconds: dbEpisode.duration_seconds || 0,
-    category: "Episode",
+    category: dbCategories?.find((c) => dbEpisode.category_ids?.includes(c.id))?.name || "Episode",
     categoryColor: "bg-muted text-muted-foreground",
     language: dbEpisode.language || "en",
     playCount: dbEpisode.play_count || 0,
@@ -56,7 +64,39 @@ export default function EpisodeDetail() {
     hasContentWarning: dbEpisode.has_content_warning || false,
     warningText: dbEpisode.warning_text || undefined,
     seriesTitle: undefined,
-  } : mockEp;
+  } : null;
+
+  // Related episodes
+  const { data: relatedEpisodes = [] } = useQuery({
+    queryKey: ["related-episodes", dbEpisode?.id, dbEpisode?.category_ids],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("episodes")
+        .select("*, profiles!episodes_creator_id_fkey(display_name)")
+        .eq("status", "published")
+        .neq("id", dbEpisode!.id)
+        .order("publish_at", { ascending: false })
+        .limit(3);
+      return (data || []).map((ep): Episode => ({
+        id: ep.id,
+        slug: ep.slug,
+        title: ep.title,
+        description: ep.description || "",
+        hostName: (ep.profiles as any)?.display_name || "Creator",
+        artworkUrl: ep.artwork_url || "",
+        audioUrl: ep.audio_url || "",
+        durationSeconds: ep.duration_seconds || 0,
+        category: "Episode",
+        categoryColor: "bg-muted text-muted-foreground",
+        language: ep.language || "en",
+        playCount: ep.play_count || 0,
+        likeCount: 0,
+        publishedAt: ep.publish_at || ep.created_at || "",
+        hasContentWarning: ep.has_content_warning || false,
+      }));
+    },
+    enabled: !!dbEpisode,
+  });
 
   const { data: isLiked } = useQuery({
     queryKey: ["liked", episode?.id, user?.id],
@@ -116,7 +156,16 @@ export default function EpisodeDetail() {
     },
   });
 
-  const relatedEpisodes = mockEpisodes.filter((e) => e.slug !== slug).slice(0, 3);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (!episode) {
     return (
@@ -133,8 +182,13 @@ export default function EpisodeDetail() {
   }
 
   const isCurrentlyPlaying = currentEpisode?.id === episode.id && isPlaying;
+  const hasAudio = !!episode.audioUrl;
 
   const handlePlay = () => {
+    if (!hasAudio) {
+      toast.error("Audio not available for this episode");
+      return;
+    }
     if (episode.hasContentWarning && showWarning) return;
     if (currentEpisode?.id === episode.id) togglePlay();
     else {
@@ -153,7 +207,6 @@ export default function EpisodeDetail() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Report modal */}
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} contentType="episode" contentId={episode.id} />
 
       {/* Content Warning Modal */}
@@ -221,11 +274,13 @@ export default function EpisodeDetail() {
 
               <button
                 onClick={handlePlay}
-                className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-medium text-primary-foreground transition-transform hover:scale-[1.02]"
-                aria-label={isCurrentlyPlaying ? "Pause episode" : "Play episode"}
+                disabled={!hasAudio}
+                className="mb-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-medium text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                aria-label={isCurrentlyPlaying ? "Pause episode" : hasAudio ? "Play episode" : "Audio not available"}
+                title={!hasAudio ? "Audio not available" : undefined}
               >
                 {isCurrentlyPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-                {isCurrentlyPlaying ? "Pause" : "Play Episode"}
+                {!hasAudio ? "Audio Not Available" : isCurrentlyPlaying ? "Pause" : "Play Episode"}
               </button>
 
               <div className="flex items-center justify-center gap-3">
@@ -237,7 +292,7 @@ export default function EpisodeDetail() {
                   aria-label="Like"
                 >
                   <Heart className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`} />
-                  {likeCount ?? episode.likeCount}
+                  {likeCount ?? 0}
                 </button>
                 <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80" aria-label="Share">
                   <Share2 className="h-4 w-4" /> Share
@@ -282,8 +337,8 @@ export default function EpisodeDetail() {
             )}
 
             <div className="mb-8 flex items-center gap-4 text-sm text-muted-foreground">
-              {(episode as any).hostId ? (
-                <Link to={`/creator/${(episode as any).hostId}`} className="font-medium text-foreground hover:text-primary">{episode.hostName}</Link>
+              {episode.hostId ? (
+                <Link to={`/creator/${episode.hostId}`} className="font-medium text-foreground hover:text-primary">{episode.hostName}</Link>
               ) : (
                 <span className="font-medium text-foreground">{episode.hostName}</span>
               )}
@@ -292,13 +347,6 @@ export default function EpisodeDetail() {
               <span>·</span>
               <span>{new Date(episode.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
             </div>
-
-            {(episode as any).seriesTitle && (
-              <div className="mb-6 rounded-2xl bg-sage-light p-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Part of series</p>
-                <p className="font-heading text-base font-semibold">{(episode as any).seriesTitle}</p>
-              </div>
-            )}
 
             {/* Description */}
             <div className="prose prose-lg max-w-none">
@@ -326,14 +374,16 @@ export default function EpisodeDetail() {
         </div>
 
         {/* Related */}
-        <section className="mt-20">
-          <h2 className="mb-8 font-heading text-2xl font-bold">You might also like</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {relatedEpisodes.map((ep, i) => (
-              <EpisodeCard key={ep.id} episode={ep} index={i} />
-            ))}
-          </div>
-        </section>
+        {relatedEpisodes.length > 0 && (
+          <section className="mt-20">
+            <h2 className="mb-8 font-heading text-2xl font-bold">You might also like</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {relatedEpisodes.map((ep, i) => (
+                <EpisodeCard key={ep.id} episode={ep} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <Footer />

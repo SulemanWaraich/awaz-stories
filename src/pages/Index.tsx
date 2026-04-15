@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, Headphones, Heart, Users } from "lucide-react";
+import { Play, ArrowRight, Headphones, Heart, Users, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { episodes, categories, formatDurationLong } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDurationLong } from "@/lib/mock-data";
+import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
@@ -16,7 +19,58 @@ const fadeUp = {
 
 export default function Index() {
   const play = useAudioStore((s) => s.play);
+
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("*").order("id");
+      return data || [];
+    },
+  });
+
+  const { data: dbEpisodes, isLoading } = useQuery({
+    queryKey: ["landing-episodes"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("episodes")
+        .select("*, profiles!episodes_creator_id_fkey(display_name)")
+        .eq("status", "published")
+        .order("publish_at", { ascending: false })
+        .limit(9);
+      return data || [];
+    },
+  });
+
+  const episodes: Episode[] = (dbEpisodes || []).map((ep) => ({
+    id: ep.id,
+    slug: ep.slug,
+    title: ep.title,
+    titleUrdu: ep.title_urdu || undefined,
+    description: ep.description || "",
+    hostName: (ep.profiles as any)?.display_name || "Creator",
+    artworkUrl: ep.artwork_url || "",
+    audioUrl: ep.audio_url || "",
+    durationSeconds: ep.duration_seconds || 0,
+    category: "Episode",
+    categoryColor: "bg-muted text-muted-foreground",
+    language: ep.language || "en",
+    playCount: ep.play_count || 0,
+    likeCount: 0,
+    publishedAt: ep.publish_at || ep.created_at || "",
+    hasContentWarning: ep.has_content_warning || false,
+    warningText: ep.warning_text || undefined,
+  }));
+
   const featured = episodes[0];
+  const categoryColors: Record<string, string> = {
+    "Mental Health": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400",
+    Stories: "bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400",
+    Relationships: "bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-400",
+    Identity: "bg-violet-100 text-violet-800 dark:bg-violet-500/10 dark:text-violet-400",
+    "Work & Life": "bg-sky-100 text-sky-800 dark:bg-sky-500/10 dark:text-sky-400",
+    Society: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-400",
+    "Urdu Originals": "bg-teal-100 text-teal-800 dark:bg-teal-500/10 dark:text-teal-400",
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,9 +97,9 @@ export default function Index() {
               >
                 Start Listening <ArrowRight className="h-4 w-4" />
               </Link>
-              <button className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:bg-muted">
+              <Link to="/auth/signup" className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:bg-muted">
                 Become a Creator
-              </button>
+              </Link>
             </motion.div>
             <motion.img
               {...fadeUp}
@@ -58,56 +112,55 @@ export default function Index() {
             />
           </div>
         </div>
-        {/* Decorative bottom wave */}
         <svg className="absolute bottom-0 left-0 right-0 text-background" viewBox="0 0 1440 60" fill="currentColor" preserveAspectRatio="none">
           <path d="M0,40 C480,80 960,0 1440,40 L1440,60 L0,60 Z" />
         </svg>
       </section>
 
       {/* Featured Episode */}
-      <section className="container py-16">
-        <motion.div {...fadeUp} className="overflow-hidden rounded-3xl bg-card shadow-warm">
-          <div className="grid md:grid-cols-2">
-            <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-accent/20 md:aspect-auto">
-              {featured.artworkUrl ? (
-                <img src={featured.artworkUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full min-h-[300px] items-center justify-center">
-                  <Headphones className="h-24 w-24 text-primary/20" />
+      {featured && (
+        <section className="container py-16">
+          <motion.div {...fadeUp} className="overflow-hidden rounded-3xl bg-card shadow-warm">
+            <div className="grid md:grid-cols-2">
+              <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-accent/20 md:aspect-auto">
+                {featured.artworkUrl ? (
+                  <img src={featured.artworkUrl} alt={featured.title} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full min-h-[300px] items-center justify-center">
+                    <Headphones className="h-24 w-24 text-primary/20" />
+                  </div>
+                )}
+                {featured.audioUrl && (
+                  <button
+                    onClick={() => play(featured)}
+                    className="absolute bottom-6 left-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+                    aria-label="Play featured episode"
+                  >
+                    <Play className="h-6 w-6 ml-0.5" />
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-col justify-center p-8 md:p-12">
+                <span className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Featured Episode
+                </span>
+                <h2 className="mb-2 font-heading text-2xl font-bold md:text-3xl">{featured.title}</h2>
+                {featured.titleUrdu && (
+                  <p className="mb-4 text-lg text-muted-foreground" style={{ fontFamily: '"Noto Nastaliq Urdu", serif', direction: "rtl" }}>
+                    {featured.titleUrdu}
+                  </p>
+                )}
+                <p className="mb-6 line-clamp-3 text-muted-foreground">{featured.description}</p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>{featured.hostName}</span>
+                  <span>·</span>
+                  <span>{formatDurationLong(featured.durationSeconds)}</span>
                 </div>
-              )}
-              <button
-                onClick={() => play(featured)}
-                className="absolute bottom-6 left-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
-              >
-                <Play className="h-6 w-6 ml-0.5" />
-              </button>
-            </div>
-            <div className="flex flex-col justify-center p-8 md:p-12">
-              <span className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Featured Episode
-              </span>
-              <span className={`mb-4 w-fit rounded-full px-3 py-1 text-xs font-medium ${featured.categoryColor}`}>
-                {featured.category}
-              </span>
-              <h2 className="mb-2 font-heading text-2xl font-bold md:text-3xl">{featured.title}</h2>
-              {featured.titleUrdu && (
-                <p className="mb-4 text-lg text-muted-foreground" style={{ fontFamily: '"Noto Nastaliq Urdu", serif', direction: "rtl" }}>
-                  {featured.titleUrdu}
-                </p>
-              )}
-              <p className="mb-6 line-clamp-3 text-muted-foreground">{featured.description}</p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>{featured.hostName}</span>
-                <span>·</span>
-                <span>{formatDurationLong(featured.durationSeconds)}</span>
-                <span>·</span>
-                <span>{new Date(featured.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </section>
+          </motion.div>
+        </section>
+      )}
 
       {/* Recent Episodes */}
       <section className="container pb-20">
@@ -120,11 +173,23 @@ export default function Index() {
             View all →
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {episodes.slice(1, 4).map((ep, i) => (
-            <EpisodeCard key={ep.id} episode={ep} index={i} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : episodes.length > 1 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {episodes.slice(1, 4).map((ep, i) => (
+              <EpisodeCard key={ep.id} episode={ep} index={i} />
+            ))}
+          </div>
+        ) : episodes.length === 0 ? (
+          <div className="py-16 text-center">
+            <Headphones className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+            <p className="mb-2 text-lg font-medium text-muted-foreground">No stories yet</p>
+            <p className="text-sm text-muted-foreground">Be the first to share your voice.</p>
+          </div>
+        ) : null}
       </section>
 
       {/* Categories */}
@@ -132,11 +197,11 @@ export default function Index() {
         <div className="container">
           <h2 className="mb-8 text-center font-heading text-2xl font-bold md:text-3xl">Explore by Category</h2>
           <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((cat) => (
+            {(dbCategories || []).map((cat) => (
               <Link
                 key={cat.id}
                 to={`/explore?category=${cat.name}`}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:scale-105 ${cat.color}`}
+                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:scale-105 ${categoryColors[cat.name] || "bg-muted text-muted-foreground"}`}
               >
                 {cat.name}
               </Link>
@@ -181,9 +246,9 @@ export default function Index() {
           <p className="mx-auto mb-8 max-w-lg text-muted-foreground">
             Join our community of storytellers. Share your voice with listeners who truly want to hear it.
           </p>
-          <button className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-medium text-accent-foreground transition-transform hover:scale-105">
+          <Link to="/auth/signup" className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-medium text-accent-foreground transition-transform hover:scale-105">
             Apply as Creator <ArrowRight className="h-4 w-4" />
-          </button>
+          </Link>
         </div>
       </section>
 
