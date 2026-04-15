@@ -10,6 +10,7 @@ import { AnimatePresence } from "framer-motion";
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
+const About = lazy(() => import("./pages/About"));
 const EpisodeDetail = lazy(() => import("./pages/EpisodeDetail"));
 const SeriesDetail = lazy(() => import("./pages/SeriesDetail"));
 const Signup = lazy(() => import("./pages/auth/Signup"));
