@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,9 +9,17 @@ import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      navigate(profile.role === "creator" ? "/dashboard" : "/explore", { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +33,20 @@ export default function Login() {
       if (error) throw error;
 
       // Fetch profile to determine redirect
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", data.user.id)
         .single();
 
       toast.success("Welcome back!");
-      navigate(profile?.role === "creator" ? "/dashboard" : "/explore");
+      navigate(profileData?.role === "creator" ? "/dashboard" : "/explore");
     } catch (err: any) {
-      toast.error(err.message || "Invalid email or password");
+      if (err.message?.includes("Email not confirmed")) {
+        toast.error("Please check your email and confirm your account first.");
+      } else {
+        toast.error(err.message || "Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }

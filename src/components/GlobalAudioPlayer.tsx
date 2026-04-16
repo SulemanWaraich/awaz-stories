@@ -1,30 +1,54 @@
 import { useEffect, useRef, useState } from "react";
 import { useAudioStore } from "@/stores/audio-store";
 import { formatDuration } from "@/lib/mock-data";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown, Heart, Bookmark, Share2, RotateCcw, RotateCw, List } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronDown, RotateCcw, RotateCw, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export function GlobalAudioPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const [buffering, setBuffering] = useState(false);
+  const [audioError, setAudioError] = useState(false);
   const {
     currentEpisode, isPlaying, currentTime, duration, volume, playbackRate, queue,
-    togglePlay, setCurrentTime, setDuration, setVolume, setPlaybackRate,
+    togglePlay, pause, setCurrentTime, setDuration, setVolume, setPlaybackRate,
     playNext, playPrevious,
   } = useAudioStore();
 
+  // Load new audio when episode changes
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentEpisode) return;
-    audio.src = currentEpisode.audioUrl;
-    if (isPlaying) audio.play().catch(() => {});
-  }, [currentEpisode]);
 
+    const url = currentEpisode.audioUrl;
+    if (!url) {
+      toast.error("Audio not available for this episode");
+      pause();
+      return;
+    }
+
+    setAudioError(false);
+    setBuffering(true);
+    audio.src = url;
+    audio.load();
+    if (isPlaying) {
+      audio.play().catch((err) => {
+        console.error("Playback failed:", err);
+        setBuffering(false);
+      });
+    }
+  }, [currentEpisode?.id]); // Only re-trigger on episode ID change
+
+  // Handle play/pause state changes
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
-    if (isPlaying) audio.play().catch(() => {});
-    else audio.pause();
+    if (!audio || !currentEpisode?.audioUrl) return;
+    if (isPlaying) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
   }, [isPlaying]);
 
   useEffect(() => {
@@ -40,7 +64,22 @@ export function GlobalAudioPlayer() {
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+      setBuffering(false);
+    }
+  };
+
+  const handleCanPlay = () => setBuffering(false);
+
+  const handleWaiting = () => setBuffering(true);
+
+  const handleError = () => {
+    setBuffering(false);
+    setAudioError(true);
+    if (currentEpisode?.audioUrl) {
+      toast.error("Failed to load audio. The file may be unavailable.");
+    }
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -69,12 +108,26 @@ export function GlobalAudioPlayer() {
     setPlaybackRate(rates[(idx + 1) % rates.length]);
   };
 
+  const handleClose = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+    }
+    useAudioStore.setState({ currentEpisode: null, isPlaying: false, currentTime: 0, duration: 0 });
+    setExpanded(false);
+  };
+
+  const PlayPauseIcon = buffering ? Loader2 : isPlaying ? Pause : Play;
+
   return (
     <>
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onWaiting={handleWaiting}
+        onError={handleError}
         onEnded={playNext}
         preload="metadata"
       />
@@ -117,10 +170,11 @@ export function GlobalAudioPlayer() {
                 </button>
                 <button
                   onClick={togglePlay}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105"
+                  disabled={audioError}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
-                  {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+                  <PlayPauseIcon className={`h-4 w-4 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-0.5" : ""}`} />
                 </button>
                 <button onClick={playNext} className="hidden p-2 text-muted-foreground transition-colors hover:text-foreground sm:block" aria-label="Next">
                   <SkipForward className="h-4 w-4" />
@@ -160,7 +214,7 @@ export function GlobalAudioPlayer() {
 
               {/* Close */}
               <button
-                onClick={() => useAudioStore.setState({ currentEpisode: null, isPlaying: false })}
+                onClick={handleClose}
                 className="p-1 text-muted-foreground hover:text-foreground"
                 aria-label="Close player"
               >
@@ -209,6 +263,11 @@ export function GlobalAudioPlayer() {
               <h2 className="mb-1 text-center font-heading text-xl font-bold">{currentEpisode.title}</h2>
               <p className="mb-8 text-sm text-muted-foreground">{currentEpisode.hostName}</p>
 
+              {/* Error state */}
+              {audioError && (
+                <p className="mb-4 text-sm text-destructive">Failed to load audio. Try again later.</p>
+              )}
+
               {/* Progress */}
               <div className="mb-2 w-full max-w-sm">
                 <div className="h-1.5 w-full cursor-pointer rounded-full bg-muted" onClick={handleSeek}>
@@ -225,8 +284,13 @@ export function GlobalAudioPlayer() {
                 <button onClick={() => skip(-15)} className="p-2 text-muted-foreground hover:text-foreground" aria-label="Rewind 15 seconds">
                   <RotateCcw className="h-6 w-6" />
                 </button>
-                <button onClick={togglePlay} className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg" aria-label={isPlaying ? "Pause" : "Play"}>
-                  {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 ml-1" />}
+                <button
+                  onClick={togglePlay}
+                  disabled={audioError}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg disabled:opacity-50"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  <PlayPauseIcon className={`h-7 w-7 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-1" : ""}`} />
                 </button>
                 <button onClick={() => skip(15)} className="p-2 text-muted-foreground hover:text-foreground" aria-label="Forward 15 seconds">
                   <RotateCw className="h-6 w-6" />
