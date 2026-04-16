@@ -4,15 +4,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Headphones, Heart, Bookmark, Users, Loader2, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { formatDurationLong } from "@/lib/mock-data";
 
 export default function ListenerProfile() {
-  const { profile } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const navigate = useNavigate();
   const recentlyPlayed = useAudioStore(s => s.recentlyPlayed);
   const [tab, setTab] = useState<"saved" | "liked" | "following" | "recent">("saved");
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth/login");
+    }
+  }, [user, loading, navigate]);
 
   const { data: bookmarks, isLoading: loadingBookmarks } = useQuery({
     queryKey: ["my-bookmarks", profile?.id],
@@ -52,6 +59,17 @@ export default function ListenerProfile() {
     enabled: !!profile && tab === "following",
   });
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   const tabs = [
     { key: "saved" as const, label: "Saved", icon: Bookmark },
     { key: "liked" as const, label: "Liked", icon: Heart },
@@ -79,7 +97,7 @@ export default function ListenerProfile() {
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xl font-bold text-muted-foreground">
+              <div className="flex h-full w-full items-center justify-center bg-primary text-xl font-bold text-primary-foreground">
                 {profile?.display_name?.charAt(0)?.toUpperCase() || "U"}
               </div>
             )}
@@ -123,7 +141,7 @@ export default function ListenerProfile() {
                     {sub.profiles?.avatar_url ? (
                       <img src={sub.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center font-bold text-muted-foreground">
+                      <div className="flex h-full w-full items-center justify-center bg-primary font-bold text-primary-foreground">
                         {sub.profiles?.display_name?.charAt(0) || "?"}
                       </div>
                     )}

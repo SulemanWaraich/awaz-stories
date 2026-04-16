@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Headphones, Mic, Check, Loader2 } from "lucide-react";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +17,13 @@ export default function Signup() {
   const [role, setRole] = useState<"listener" | "creator">("listener");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      navigate(profile.role === "creator" ? "/dashboard" : "/explore", { replace: true });
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -41,10 +50,13 @@ export default function Signup() {
         },
       });
       if (error) throw error;
-      toast.success("Account created! Check your email to confirm.");
-      navigate(role === "creator" ? "/dashboard" : "/explore");
+      toast.success("Account created! Check your email to confirm your account.");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong");
+      if (err.message?.includes("already registered")) {
+        toast.error("This email is already registered. Try signing in instead.");
+      } else {
+        toast.error(err.message || "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -106,7 +118,7 @@ export default function Signup() {
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Your name"
               />
-              {errors.displayName && <p className="mt-1 text-xs text-accent">{errors.displayName}</p>}
+              {errors.displayName && <p className="mt-1 text-xs text-destructive">{errors.displayName}</p>}
             </div>
 
             <div>
@@ -118,7 +130,7 @@ export default function Signup() {
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="you@example.com"
               />
-              {errors.email && <p className="mt-1 text-xs text-accent">{errors.email}</p>}
+              {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div>
@@ -130,7 +142,7 @@ export default function Signup() {
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="At least 6 characters"
               />
-              {errors.password && <p className="mt-1 text-xs text-accent">{errors.password}</p>}
+              {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
             </div>
 
             <div>
@@ -142,7 +154,7 @@ export default function Signup() {
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Repeat your password"
               />
-              {errors.confirmPassword && <p className="mt-1 text-xs text-accent">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
             </div>
 
             <button

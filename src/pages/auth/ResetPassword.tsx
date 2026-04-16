@@ -11,15 +11,42 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Check for recovery token in URL hash
+    // Supabase v2 handles recovery via onAuthStateChange PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setReady(true);
+      }
+    });
+
+    // Also check if there's a hash with type=recovery (for direct link clicks)
     const hash = window.location.hash;
-    if (!hash.includes("type=recovery")) {
-      toast.error("Invalid reset link");
-      navigate("/auth/login");
+    if (hash && (hash.includes("type=recovery") || hash.includes("access_token"))) {
+      setReady(true);
     }
-  }, [navigate]);
+
+    // Give a short grace period for the auth state change to fire
+    const timeout = setTimeout(() => {
+      if (!ready) {
+        // Check if user has an active session (they may have already been auto-signed-in)
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            setReady(true);
+          } else {
+            toast.error("Invalid or expired reset link");
+            navigate("/auth/forgot-password");
+          }
+        });
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [navigate, ready]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +65,17 @@ export default function ResetPassword() {
     }
   };
 
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -49,6 +87,7 @@ export default function ResetPassword() {
         >
           <div className="mb-8 text-center">
             <h1 className="font-heading text-3xl font-bold">Set new password</h1>
+            <p className="mt-2 text-muted-foreground">Choose a strong password for your account</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -57,6 +96,7 @@ export default function ResetPassword() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 6 characters"
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -66,6 +106,7 @@ export default function ResetPassword() {
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Repeat your password"
                 className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
