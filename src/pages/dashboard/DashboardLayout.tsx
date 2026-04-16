@@ -18,12 +18,16 @@ export default function DashboardLayout() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (!loading && (!user || profile?.role !== "creator")) {
-      navigate("/auth/login");
+    if (!loading) {
+      if (!user) {
+        navigate("/auth/login", { replace: true });
+      } else if (profile && profile.role !== "creator") {
+        navigate("/explore", { replace: true });
+      }
     }
   }, [user, profile, loading, navigate]);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -31,7 +35,7 @@ export default function DashboardLayout() {
     );
   }
 
-  if (!user || profile?.role !== "creator") return null;
+  if (!user || profile.role !== "creator") return null;
 
   return (
     <div className="flex min-h-screen bg-background">
