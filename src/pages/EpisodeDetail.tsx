@@ -19,11 +19,16 @@ import { toast } from "sonner";
 
 export default function EpisodeDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { currentEpisode, isPlaying, play, togglePlay } = useAudioStore();
+  const { currentEpisode, isPlaying, currentTime, play, togglePlay } = useAudioStore();
   const [showWarning, setShowWarning] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  const sharedTimestamp = Number(searchParams.get("t")) || 0;
 
   const { data: dbEpisode, isLoading } = useQuery({
     queryKey: ["episode", slug],
