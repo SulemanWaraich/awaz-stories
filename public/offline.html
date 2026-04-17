@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline — Awaz</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: ui-serif, Georgia, serif;
+        background: #FDFAF5;
+        color: #1A1A1A;
+        padding: 2rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #0F1511; color: #E8F0E8; }
+        .card { background: #1A2318; border-color: #2E3F2E; }
+      }
+      .card {
+        max-width: 420px;
+        text-align: center;
+        background: white;
+        border: 1px solid #e6e1d6;
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+      }
+      .glyph {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        border-radius: 50%;
+        background: #2C5F4A;
+        color: #FDFAF5;
+        display: grid;
+        place-items: center;
+        font-size: 2.4rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin: 0 0 0.5rem;
+        font-weight: 600;
+      }
+      p {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #6b6b6b;
+        line-height: 1.6;
+        margin: 0 0 2rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        p { color: #8FA88F; }
+      }
+      button {
+        background: #2C5F4A;
+        color: #FDFAF5;
+        border: none;
+        padding: 0.85rem 1.75rem;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.15s ease;
+      }
+      button:hover { transform: scale(1.03); }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="glyph">آ</div>
+      <h1>You're offline</h1>
+      <p>Connect to the internet to keep listening to stories that deserve to be heard.</p>
+      <button onclick="location.reload()">Try again</button>
+    </div>
+  </body>
+</html>
