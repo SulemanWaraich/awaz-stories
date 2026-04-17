@@ -301,6 +301,9 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          is_featured: boolean | null
+          onboarding_complete: boolean | null
+          preferred_categories: number[] | null
           role: string | null
           social_links: Json | null
           updated_at: string | null
@@ -311,6 +314,9 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id: string
+          is_featured?: boolean | null
+          onboarding_complete?: boolean | null
+          preferred_categories?: number[] | null
           role?: string | null
           social_links?: Json | null
           updated_at?: string | null
@@ -321,6 +327,9 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           id?: string
+          is_featured?: boolean | null
+          onboarding_complete?: boolean | null
+          preferred_categories?: number[] | null
           role?: string | null
           social_links?: Json | null
           updated_at?: string | null
