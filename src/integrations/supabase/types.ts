@@ -450,7 +450,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_play_count: {
+        Args: { episode_uuid: string }
+        Returns: undefined
+      }
+      plays_last_24h: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
