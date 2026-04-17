@@ -84,6 +84,11 @@ export default function CreatorProfile() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title={`${creator?.display_name || "Creator"} | Awaz Creator`}
+        description={creator?.bio?.slice(0, 160) || `${creator?.display_name || "A creator"} shares stories on Awaz.`}
+        image={creator?.avatar_url || undefined}
+      />
       <Navbar />
       <div className="container py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex flex-col items-center text-center">

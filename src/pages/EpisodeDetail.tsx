@@ -206,6 +206,24 @@ export default function EpisodeDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title={episode.title}
+        description={episode.description || `${episode.title} on Awaz.`}
+        image={episode.artworkUrl}
+        type="article"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "PodcastEpisode",
+          name: episode.title,
+          description: episode.description?.slice(0, 500),
+          datePublished: episode.publishedAt,
+          duration: `PT${Math.round((episode.durationSeconds || 0) / 60)}M`,
+          associatedMedia: episode.audioUrl ? {
+            "@type": "MediaObject",
+            contentUrl: episode.audioUrl,
+          } : undefined,
+        }}
+      />
       <Navbar />
 
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} contentType="episode" contentId={episode.id} />

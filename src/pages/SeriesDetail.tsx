@@ -138,6 +138,11 @@ export default function SeriesDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title={`${series.title} — Series`}
+        description={series.description?.slice(0, 160) || `${series.title} on Awaz.`}
+        image={series.artwork_url || undefined}
+      />
       <Navbar />
 
       {/* Hero */}
