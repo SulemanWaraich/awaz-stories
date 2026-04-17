@@ -65,6 +65,7 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO title="Create account" description="Join Awaz to listen and share stories." noIndex />
       <Navbar />
       <div className="container flex items-center justify-center py-16">
         <motion.div

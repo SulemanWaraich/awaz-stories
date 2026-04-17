@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import { useState, useEffect } from "react";
 import { Headphones, Heart, Bookmark, Users, Loader2, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -89,6 +90,7 @@ export default function ListenerProfile() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO title="Your profile" description="Your saved and liked episodes on Awaz." noIndex />
       <Navbar />
       <div className="container py-10">
         {/* Profile header */}

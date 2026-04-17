@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageSEO } from "@/components/PageSEO";
 import { Home, Mic2, Upload, BarChart3, User, Settings, ArrowLeft, Loader2 } from "lucide-react";
 
 const navItems = [
