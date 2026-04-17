@@ -200,6 +200,13 @@ export default function EpisodeDetail() {
     if (currentEpisode?.id === episode.id) togglePlay();
     else {
       play(episode);
+      // Apply shared timestamp from ?t= once after play starts
+      if (sharedTimestamp > 0) {
+        setTimeout(() => {
+          const audio = document.querySelector("audio");
+          if (audio) audio.currentTime = sharedTimestamp;
+        }, 600);
+      }
       if (user && dbEpisode) {
         supabase.from("play_events").insert({
           user_id: user.id,
@@ -208,6 +215,19 @@ export default function EpisodeDetail() {
         }).then(() => {});
       }
     }
+  };
+
+  const isThisEpisodeLoaded = currentEpisode?.id === episode.id;
+  const isThisPaused = isThisEpisodeLoaded && !isPlaying && currentTime > 0;
+  const baseUrl = `/episode/${episode.slug}`;
+  const openShareWithTimestamp = () => {
+    const t = Math.floor(currentTime);
+    setShareUrl(`${baseUrl}?t=${t}`);
+    setShareOpen(true);
+  };
+  const openShare = () => {
+    setShareUrl(baseUrl);
+    setShareOpen(true);
   };
 
   return (
@@ -319,7 +339,11 @@ export default function EpisodeDetail() {
                   <Heart className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`} />
                   {likeCount ?? 0}
                 </button>
-                <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80" aria-label="Share">
+                <button
+                  onClick={openShare}
+                  className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80"
+                  aria-label="Share"
+                >
                   <Share2 className="h-4 w-4" /> Share
                 </button>
                 <button
