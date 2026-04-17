@@ -253,6 +253,7 @@ export default function EpisodeDetail() {
       <Navbar />
 
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} contentType="episode" contentId={episode.id} />
+      <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} url={shareUrl} title={episode.title} />
 
       {/* Content Warning Modal */}
       <AnimatePresence>
