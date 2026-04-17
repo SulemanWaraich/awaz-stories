@@ -1,7 +1,9 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark, Flag, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ShareSheet } from "@/components/ShareSheet";
+import { useAudioStore } from "@/stores/audio-store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
