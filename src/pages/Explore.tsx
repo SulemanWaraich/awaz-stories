@@ -8,6 +8,7 @@ import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 
 export default function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -113,6 +114,10 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title="Explore Podcasts"
+        description="Discover podcasts on mental health, relationships, identity, and society. Stream in Urdu and English."
+      />
       <Navbar />
 
       <div className="container py-10">

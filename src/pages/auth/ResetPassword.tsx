@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { PageSEO } from "@/components/PageSEO";
 import { toast } from "sonner";
 
 export default function ResetPassword() {
@@ -78,6 +79,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO title="Set new password" description="Set a new password for Awaz." noIndex />
       <Navbar />
       <div className="container flex items-center justify-center py-16">
         <motion.div

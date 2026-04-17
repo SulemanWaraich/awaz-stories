@@ -3,6 +3,7 @@ import { Heart, Users, Headphones, Shield, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -13,6 +14,10 @@ const fadeUp = {
 export default function About() {
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title="Our Story"
+        description="Why Awaz exists — a slow, intentional space for unheard voices, mental health, and meaningful storytelling."
+      />
       <Navbar />
 
       {/* Hero */}

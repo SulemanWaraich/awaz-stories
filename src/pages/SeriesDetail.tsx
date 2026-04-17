@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import { Play, Headphones, Users, Loader2, Bell, BellOff, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatDurationLong } from "@/lib/mock-data";
@@ -137,6 +138,11 @@ export default function SeriesDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title={`${series.title} — Series`}
+        description={series.description?.slice(0, 160) || `${series.title} on Awaz.`}
+        image={series.artwork_url || undefined}
+      />
       <Navbar />
 
       {/* Hero */}

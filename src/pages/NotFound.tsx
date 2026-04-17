@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import { Headphones } from "lucide-react";
 
 export default function NotFound() {
@@ -8,6 +9,7 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO title="Page not found" description="This story doesn't exist (yet)." noIndex />
       <Navbar />
       <div className="container flex flex-col items-center justify-center py-24 text-center">
         <Headphones className="mb-6 h-20 w-20 text-muted-foreground/20" />

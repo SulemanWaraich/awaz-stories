@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { PageSEO } from "@/components/PageSEO";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -54,6 +55,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO title="Sign in" description="Sign in to Awaz." noIndex />
       <Navbar />
       <div className="container flex items-center justify-center py-16">
         <motion.div

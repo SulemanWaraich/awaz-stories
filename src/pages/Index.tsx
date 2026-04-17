@@ -9,6 +9,7 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import heroIllustration from "@/assets/hero-illustration.jpg";
 
 const fadeUp = {
@@ -74,6 +75,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title="Awaz — Stories that deserve to be heard"
+        description="A podcast platform for storytelling, mental health, and meaningful conversations in Urdu and English."
+      />
       <Navbar />
 
       {/* Hero */}
