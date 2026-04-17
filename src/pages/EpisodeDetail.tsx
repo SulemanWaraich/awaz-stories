@@ -13,6 +13,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CommentsSection } from "@/components/CommentsSection";
 import { ReportModal } from "@/components/ReportModal";
+import { PageSEO } from "@/components/PageSEO";
 import { toast } from "sonner";
 
 export default function EpisodeDetail() {

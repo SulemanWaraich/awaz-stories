@@ -9,6 +9,7 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import heroIllustration from "@/assets/hero-illustration.jpg";
 
 const fadeUp = {

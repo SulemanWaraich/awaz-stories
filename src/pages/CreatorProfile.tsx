@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { Loader2, Users } from "lucide-react";
 import { toast } from "sonner";

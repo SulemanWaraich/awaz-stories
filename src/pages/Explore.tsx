@@ -8,6 +8,7 @@ import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 
 export default function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();

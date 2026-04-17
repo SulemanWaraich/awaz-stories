@@ -3,6 +3,7 @@ import { Heart, Users, Headphones, Shield, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { PageSEO } from "@/components/PageSEO";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
