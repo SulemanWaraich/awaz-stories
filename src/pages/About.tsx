@@ -14,6 +14,10 @@ const fadeUp = {
 export default function About() {
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title="Our Story"
+        description="Why Awaz exists — a slow, intentional space for unheard voices, mental health, and meaningful storytelling."
+      />
       <Navbar />
 
       {/* Hero */}

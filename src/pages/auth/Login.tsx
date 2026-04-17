@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { PageSEO } from "@/components/PageSEO";
 import { toast } from "sonner";
 
 export default function Login() {

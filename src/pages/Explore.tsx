@@ -114,6 +114,10 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageSEO
+        title="Explore Podcasts"
+        description="Discover podcasts on mental health, relationships, identity, and society. Stream in Urdu and English."
+      />
       <Navbar />
 
       <div className="container py-10">
