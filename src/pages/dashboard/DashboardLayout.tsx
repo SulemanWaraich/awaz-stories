@@ -40,6 +40,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <PageSEO title="Creator Dashboard" description="Manage your podcast episodes and analytics on Awaz." noIndex />
       {/* Sidebar — hidden on mobile */}
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-60 flex-col border-r border-border bg-card md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-border px-5">
