@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Play, ArrowRight, Headphones, Heart, Users, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Play, ArrowRight, Headphones, Heart, Users, Loader2, Compass, Sparkles, BarChart3, Globe2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDurationLong } from "@/lib/mock-data";
@@ -18,8 +19,30 @@ const fadeUp = {
   transition: { duration: 0.6 },
 };
 
+const TESTIMONIALS = [
+  {
+    quote: "Awaz feels like a quiet evening with a friend who truly listens. The stories stay with me long after I press pause.",
+    attribution: "Listener from Karachi",
+  },
+  {
+    quote: "I'd never shared my voice publicly before. Awaz gave me a place where my story didn't have to compete — it just had to be true.",
+    attribution: "Storyteller from Lahore",
+  },
+  {
+    quote: "The Urdu episodes feel like home. There's no rush here — just space to feel and reflect.",
+    attribution: "Listener from Islamabad",
+  },
+];
+
 export default function Index() {
   const play = useAudioStore((s) => s.play);
+  const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+  // Auto-rotate testimonials
+  useEffect(() => {
+    const id = setInterval(() => setTestimonialIdx((i) => (i + 1) % TESTIMONIALS.length), 5000);
+    return () => clearInterval(id);
+  }, []);
 
   const { data: dbCategories } = useQuery({
     queryKey: ["categories"],
@@ -34,12 +57,52 @@ export default function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("episodes")
-        .select("*, profiles!episodes_creator_id_fkey(display_name)")
+        .select("id, slug, title, title_urdu, description, artwork_url, audio_url, duration_seconds, language, play_count, publish_at, created_at, has_content_warning, warning_text, profiles!episodes_creator_id_fkey(display_name)")
         .eq("status", "published")
         .order("publish_at", { ascending: false })
         .limit(9);
       return data || [];
     },
+  });
+
+  // Plays in last 24h (RPC)
+  const { data: playsToday } = useQuery({
+    queryKey: ["plays-24h"],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("plays_last_24h");
+      return Number(data) || 0;
+    },
+    refetchInterval: 60_000,
+  });
+
+  // Featured creator (one with is_featured = true)
+  const { data: featuredCreator } = useQuery({
+    queryKey: ["featured-creator"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, bio, avatar_url")
+        .eq("is_featured", true)
+        .eq("role", "creator")
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: featuredCreatorEpisodes = [] } = useQuery({
+    queryKey: ["featured-creator-episodes", featuredCreator?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("episodes")
+        .select("id, slug, title, artwork_url, duration_seconds, publish_at")
+        .eq("creator_id", featuredCreator!.id)
+        .eq("status", "published")
+        .order("publish_at", { ascending: false })
+        .limit(3);
+      return data || [];
+    },
+    enabled: !!featuredCreator,
   });
 
   const episodes: Episode[] = (dbEpisodes || []).map((ep) => ({
@@ -102,7 +165,7 @@ export default function Index() {
               >
                 Start Listening <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/auth/signup" className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:bg-muted">
+              <Link to="/auth/signup?role=creator" className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:bg-muted">
                 Become a Creator
               </Link>
             </motion.div>
@@ -114,12 +177,31 @@ export default function Index() {
               className="mx-auto mt-12 w-64 md:w-80"
               width={1024}
               height={1024}
+              fetchPriority="high"
             />
           </div>
         </div>
         <svg className="absolute bottom-0 left-0 right-0 text-background" viewBox="0 0 1440 60" fill="currentColor" preserveAspectRatio="none">
           <path d="M0,40 C480,80 960,0 1440,40 L1440,60 L0,60 Z" />
         </svg>
+      </section>
+
+      {/* Social proof strip */}
+      <section className="border-b border-border bg-card/30">
+        <div className="container py-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <Globe2 className="h-4 w-4 text-primary" />
+              Listened to by storytellers in 12 countries
+            </span>
+            <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 md:inline-block" />
+            <span>
+              <span className="font-semibold text-foreground">{(playsToday ?? 0).toLocaleString()}</span> episodes streamed today
+            </span>
+            <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 md:inline-block" />
+            <span>Available on Web · iOS (coming soon) · Android (coming soon)</span>
+          </div>
+        </div>
       </section>
 
       {/* Featured Episode */}
@@ -129,7 +211,7 @@ export default function Index() {
             <div className="grid md:grid-cols-2">
               <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-accent/20 md:aspect-auto">
                 {featured.artworkUrl ? (
-                  <img src={featured.artworkUrl} alt={featured.title} className="h-full w-full object-cover" />
+                  <img src={featured.artworkUrl} alt={featured.title} className="h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <div className="flex h-full min-h-[300px] items-center justify-center">
                     <Headphones className="h-24 w-24 text-primary/20" />
@@ -197,6 +279,68 @@ export default function Index() {
         ) : null}
       </section>
 
+      {/* Featured Creator Spotlight */}
+      {featuredCreator && (
+        <section className="bg-card py-20">
+          <div className="container">
+            <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
+              <div className="mx-auto md:mx-0">
+                <div className="h-40 w-40 overflow-hidden rounded-full bg-gradient-to-br from-primary/20 to-accent/20 ring-4 ring-background">
+                  {featuredCreator.avatar_url ? (
+                    <img src={featuredCreator.avatar_url} alt={featuredCreator.display_name || "Creator"} className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <Users className="h-16 w-16 text-primary/40" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="mb-2 inline-block text-xs font-medium uppercase tracking-wider text-primary">Featured Creator</span>
+                <h2 className="mb-3 font-heading text-3xl font-bold">{featuredCreator.display_name}</h2>
+                {featuredCreator.bio && (
+                  <blockquote className="mb-6 border-l-4 border-accent pl-4 font-heading text-lg italic text-foreground/80">
+                    "{featuredCreator.bio}"
+                  </blockquote>
+                )}
+                <Link
+                  to={`/creator/${featuredCreator.id}`}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-transform hover:scale-105"
+                >
+                  Visit profile <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+
+            {featuredCreatorEpisodes.length > 0 && (
+              <div className="mt-10 grid gap-4 sm:grid-cols-3">
+                {featuredCreatorEpisodes.map((ep) => (
+                  <Link
+                    key={ep.id}
+                    to={`/episode/${ep.slug}`}
+                    className="group flex items-center gap-3 rounded-2xl border border-border bg-background p-3 transition-colors hover:border-primary/40"
+                  >
+                    <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                      {ep.artwork_url ? (
+                        <img src={ep.artwork_url} alt={ep.title} className="h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <Headphones className="h-5 w-5 text-primary/40" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium group-hover:text-primary">{ep.title}</p>
+                      <p className="text-xs text-muted-foreground">{formatDurationLong(ep.duration_seconds || 0)}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Categories */}
       <section className="bg-card py-16">
         <div className="container">
@@ -211,6 +355,70 @@ export default function Index() {
                 {cat.name}
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="container py-20">
+        <h2 className="mb-12 text-center font-heading text-3xl font-bold">How Awaz works</h2>
+        <div className="relative grid gap-12 md:grid-cols-3 md:gap-8">
+          {/* Connecting line on desktop */}
+          <div className="absolute left-1/6 right-1/6 top-7 hidden h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent md:block" />
+          {[
+            { icon: Compass, title: "Discover", desc: "Browse stories by topic and mood" },
+            { icon: Headphones, title: "Listen", desc: "Stream anywhere, continue where you left off" },
+            { icon: Heart, title: "Connect", desc: "Follow creators, save episodes, join the conversation" },
+          ].map((step, i) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.15 }}
+              className="relative text-center"
+            >
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft">
+                <step.icon className="h-6 w-6" />
+              </div>
+              <h3 className="mb-2 font-heading text-xl font-semibold">{step.title}</h3>
+              <p className="text-sm text-muted-foreground">{step.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="bg-gradient-hero paper-texture py-20">
+        <div className="container">
+          <div className="mx-auto max-w-2xl">
+            <div className="relative h-48">
+              <AnimatePresence mode="wait">
+                <motion.blockquote
+                  key={testimonialIdx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 rounded-3xl bg-card p-8 shadow-soft md:p-10"
+                >
+                  <p className="mb-4 font-heading text-xl italic leading-relaxed text-foreground/80 md:text-2xl">
+                    "{TESTIMONIALS[testimonialIdx].quote}"
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">— {TESTIMONIALS[testimonialIdx].attribution}</p>
+                </motion.blockquote>
+              </AnimatePresence>
+            </div>
+            <div className="mt-6 flex justify-center gap-2">
+              {TESTIMONIALS.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setTestimonialIdx(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === testimonialIdx ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/40"}`}
+                  aria-label={`Show testimonial ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -244,16 +452,47 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Creator CTA */}
-      <section className="bg-gradient-hero paper-texture py-20">
-        <div className="container text-center">
-          <h2 className="mb-4 font-heading text-3xl font-bold md:text-4xl">Have a story to tell?</h2>
-          <p className="mx-auto mb-8 max-w-lg text-muted-foreground">
-            Join our community of storytellers. Share your voice with listeners who truly want to hear it.
-          </p>
-          <Link to="/auth/signup" className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-medium text-accent-foreground transition-transform hover:scale-105">
-            Apply as Creator <ArrowRight className="h-4 w-4" />
-          </Link>
+      {/* Creator CTA — split layout */}
+      <section className="bg-card py-20">
+        <div className="container">
+          <div className="grid items-center gap-10 rounded-3xl bg-gradient-to-br from-primary/5 to-accent/5 p-8 md:grid-cols-2 md:p-12">
+            <div className="order-2 md:order-1">
+              <span className="mb-2 inline-block text-xs font-medium uppercase tracking-wider text-primary">For storytellers</span>
+              <h2 className="mb-3 font-heading text-3xl font-bold md:text-4xl">Are you a storyteller?</h2>
+              <p className="mb-6 text-lg text-muted-foreground">Your audience is already listening.</p>
+              <ul className="mb-8 space-y-3">
+                {[
+                  { icon: Sparkles, text: "Free to upload — no fees, ever" },
+                  { icon: BarChart3, text: "Full analytics on every episode" },
+                  { icon: Heart, text: "Your story, your terms" },
+                ].map((b) => (
+                  <li key={b.text} className="flex items-center gap-3 text-sm text-foreground/80">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <b.icon className="h-4 w-4" />
+                    </div>
+                    {b.text}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/auth/signup?role=creator"
+                className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-medium text-accent-foreground transition-transform hover:scale-105"
+              >
+                Start creating — it's free <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="order-1 flex items-center justify-center md:order-2">
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 blur-2xl" />
+                <img
+                  src={heroIllustration}
+                  alt="Storyteller at a microphone"
+                  className="relative w-64 md:w-80"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
