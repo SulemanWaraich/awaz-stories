@@ -353,15 +353,15 @@ export default function Index() {
       )}
 
       {/* Categories */}
-      <section className="bg-card py-16">
+      <section className="bg-surface py-16">
         <div className="container">
-          <h2 className="mb-8 text-center font-heading text-2xl font-bold md:text-3xl">Explore by Category</h2>
-          <div className="flex flex-wrap justify-center gap-3">
+          <h2 className="mb-8 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">Explore by Category</h2>
+          <div className="flex flex-wrap justify-center gap-2">
             {(dbCategories || []).map((cat) => (
               <Link
                 key={cat.id}
                 to={`/explore?category=${cat.name}`}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:scale-105 ${categoryColors[cat.name] || "bg-muted text-muted-foreground"}`}
+                className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:scale-[1.03] hover:border-primary/50 hover:bg-primary/15"
               >
                 {cat.name}
               </Link>
