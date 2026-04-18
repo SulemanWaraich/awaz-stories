@@ -329,6 +329,20 @@ export default function EpisodeDetail() {
                 {!hasAudio ? "Audio Not Available" : isCurrentlyPlaying ? "Pause" : "Play Episode"}
               </button>
 
+              {sharedTimestamp > 0 && (
+                <p className="mb-3 text-center text-xs text-muted-foreground">
+                  Shared from {formatDuration(sharedTimestamp)}
+                </p>
+              )}
+              {isThisPaused && (
+                <button
+                  onClick={openShareWithTimestamp}
+                  className="mb-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  <Share2 className="h-3.5 w-3.5" /> Share from {formatDuration(Math.floor(currentTime))}
+                </button>
+              )}
+
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => likeMutation.mutate()}
