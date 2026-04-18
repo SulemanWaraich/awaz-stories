@@ -1,13 +1,26 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 import { AnimatePresence } from "framer-motion";
+
+function GlobalChrome() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/embed/")) return null;
+  return (
+    <>
+      <GlobalAudioPlayer />
+      <PWAInstallPrompt />
+      <OnboardingGate />
+    </>
+  );
+}
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
@@ -28,6 +41,7 @@ const DashboardSettings = lazy(() => import("./pages/dashboard/DashboardSettings
 const ListenerProfile = lazy(() => import("./pages/ListenerProfile"));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EmbedEpisode = lazy(() => import("./pages/EmbedEpisode"));
 
 const queryClient = new QueryClient();
 
@@ -66,11 +80,11 @@ const App = () => (
                 <Route path="profile" element={<DashboardProfileEdit />} />
                 <Route path="settings" element={<DashboardSettings />} />
               </Route>
+              <Route path="/embed/episode/:slug" element={<EmbedEpisode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <GlobalAudioPlayer />
-          <PWAInstallPrompt />
+          <GlobalChrome />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

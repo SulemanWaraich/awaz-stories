@@ -1,14 +1,15 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Play, Pause, Heart, Share2, Download, ArrowLeft, Clock, Headphones, AlertTriangle, Bookmark, Flag, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDurationLong } from "@/lib/mock-data";
+import { formatDurationLong, formatDuration } from "@/lib/mock-data";
 import type { Episode } from "@/lib/mock-data";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { useAudioStore } from "@/stores/audio-store";
+import { ShareSheet } from "@/components/ShareSheet";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CommentsSection } from "@/components/CommentsSection";
@@ -18,11 +19,16 @@ import { toast } from "sonner";
 
 export default function EpisodeDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { currentEpisode, isPlaying, play, togglePlay } = useAudioStore();
+  const { currentEpisode, isPlaying, currentTime, play, togglePlay } = useAudioStore();
   const [showWarning, setShowWarning] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+
+  const sharedTimestamp = Number(searchParams.get("t")) || 0;
 
   const { data: dbEpisode, isLoading } = useQuery({
     queryKey: ["episode", slug],
@@ -194,6 +200,13 @@ export default function EpisodeDetail() {
     if (currentEpisode?.id === episode.id) togglePlay();
     else {
       play(episode);
+      // Apply shared timestamp from ?t= once after play starts
+      if (sharedTimestamp > 0) {
+        setTimeout(() => {
+          const audio = document.querySelector("audio");
+          if (audio) audio.currentTime = sharedTimestamp;
+        }, 600);
+      }
       if (user && dbEpisode) {
         supabase.from("play_events").insert({
           user_id: user.id,
@@ -202,6 +215,19 @@ export default function EpisodeDetail() {
         }).then(() => {});
       }
     }
+  };
+
+  const isThisEpisodeLoaded = currentEpisode?.id === episode.id;
+  const isThisPaused = isThisEpisodeLoaded && !isPlaying && currentTime > 0;
+  const baseUrl = `/episode/${episode.slug}`;
+  const openShareWithTimestamp = () => {
+    const t = Math.floor(currentTime);
+    setShareUrl(`${baseUrl}?t=${t}`);
+    setShareOpen(true);
+  };
+  const openShare = () => {
+    setShareUrl(baseUrl);
+    setShareOpen(true);
   };
 
   return (
@@ -227,6 +253,7 @@ export default function EpisodeDetail() {
       <Navbar />
 
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} contentType="episode" contentId={episode.id} />
+      <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} url={shareUrl} title={episode.title} />
 
       {/* Content Warning Modal */}
       <AnimatePresence>
@@ -302,6 +329,20 @@ export default function EpisodeDetail() {
                 {!hasAudio ? "Audio Not Available" : isCurrentlyPlaying ? "Pause" : "Play Episode"}
               </button>
 
+              {sharedTimestamp > 0 && (
+                <p className="mb-3 text-center text-xs text-muted-foreground">
+                  Shared from {formatDuration(sharedTimestamp)}
+                </p>
+              )}
+              {isThisPaused && (
+                <button
+                  onClick={openShareWithTimestamp}
+                  className="mb-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  <Share2 className="h-3.5 w-3.5" /> Share from {formatDuration(Math.floor(currentTime))}
+                </button>
+              )}
+
               <div className="flex items-center justify-center gap-3">
                 <button
                   onClick={() => likeMutation.mutate()}
@@ -313,7 +354,11 @@ export default function EpisodeDetail() {
                   <Heart className={`h-4 w-4 transition-transform ${isLiked ? "fill-current scale-110" : ""}`} />
                   {likeCount ?? 0}
                 </button>
-                <button className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80" aria-label="Share">
+                <button
+                  onClick={openShare}
+                  className="flex items-center gap-1.5 rounded-xl bg-muted px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80"
+                  aria-label="Share"
+                >
                   <Share2 className="h-4 w-4" /> Share
                 </button>
                 <button
