@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -28,6 +29,7 @@ const DashboardSettings = lazy(() => import("./pages/dashboard/DashboardSettings
 const ListenerProfile = lazy(() => import("./pages/ListenerProfile"));
 const CreatorProfile = lazy(() => import("./pages/CreatorProfile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EmbedEpisode = lazy(() => import("./pages/EmbedEpisode"));
 
 const queryClient = new QueryClient();
 
@@ -66,11 +68,13 @@ const App = () => (
                 <Route path="profile" element={<DashboardProfileEdit />} />
                 <Route path="settings" element={<DashboardSettings />} />
               </Route>
+              <Route path="/embed/episode/:slug" element={<EmbedEpisode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
           <GlobalAudioPlayer />
           <PWAInstallPrompt />
+          <OnboardingGate />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
