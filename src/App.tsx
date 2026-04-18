@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,18 @@ import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 import { AnimatePresence } from "framer-motion";
+
+function GlobalChrome() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith("/embed/")) return null;
+  return (
+    <>
+      <GlobalAudioPlayer />
+      <PWAInstallPrompt />
+      <OnboardingGate />
+    </>
+  );
+}
 
 const Index = lazy(() => import("./pages/Index"));
 const Explore = lazy(() => import("./pages/Explore"));
@@ -72,9 +84,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <GlobalAudioPlayer />
-          <PWAInstallPrompt />
-          <OnboardingGate />
+          <GlobalChrome />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
