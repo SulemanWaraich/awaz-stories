@@ -4,6 +4,20 @@ import App from "./App.tsx";
 import "./index.css";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+// Apply persisted theme before render to prevent FOUC.
+// App is dark by default; only switch to light if explicitly stored.
+(() => {
+  const stored = localStorage.getItem("awaz-theme");
+  const root = document.documentElement;
+  if (stored === "light") {
+    root.classList.add("light");
+    root.classList.remove("dark");
+  } else {
+    root.classList.add("dark");
+    root.classList.remove("light");
+  }
+})();
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <HelmetProvider>

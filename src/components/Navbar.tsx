@@ -30,7 +30,6 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Cmd+K / Ctrl+K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -45,13 +44,13 @@ export function Navbar() {
   return (
     <>
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <nav className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-md transition-colors duration-300">
+      <nav className="sticky top-0 z-40 border-b border-border glass">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-              <span className="font-heading text-lg font-bold text-primary-foreground">آ</span>
-            </div>
-            <span className="font-heading text-xl font-bold">Awaz</span>
+          <Link to="/" className="flex items-baseline gap-1.5">
+            <span className="font-heading text-2xl font-bold text-primary leading-none" style={{ fontFamily: '"Noto Nastaliq Urdu", serif' }}>
+              آواز
+            </span>
+            <span className="font-heading text-lg font-medium tracking-tight text-foreground">Awaz</span>
           </Link>
 
           {/* Desktop */}
@@ -60,8 +59,8 @@ export function Navbar() {
               <Link
                 key={l.to}
                 to={l.to}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === l.to ? "text-primary" : "text-muted-foreground"
+                className={`text-sm font-medium transition-colors ${
+                  pathname === l.to ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {l.label}
@@ -70,12 +69,12 @@ export function Navbar() {
 
             <button
               onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              className="flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-elevated hover:bg-card"
               aria-label="Search"
             >
               <Search className="h-4 w-4" />
               <span className="hidden lg:inline">Search</span>
-              <kbd className="hidden rounded border border-border px-1.5 py-0.5 text-[10px] lg:inline">⌘K</kbd>
+              <kbd className="hidden rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] lg:inline">⌘K</kbd>
             </button>
 
             <ThemeToggle />
@@ -86,7 +85,7 @@ export function Navbar() {
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setDropdownOpen(!dropdownOpen)}
-                      className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+                      className="flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1.5 text-sm transition-colors hover:bg-card"
                     >
                       {profile?.avatar_url ? (
                         <img src={profile.avatar_url} alt="" className="h-6 w-6 rounded-full object-cover" />
@@ -105,13 +104,13 @@ export function Navbar() {
                           initial={{ opacity: 0, y: 4, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                          className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-card py-1 shadow-warm"
+                          className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-card py-1 shadow-warm"
                         >
                           {profile?.role === "creator" && (
                             <Link
                               to="/dashboard"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-card-hover"
                             >
                               <LayoutDashboard className="h-4 w-4" /> Dashboard
                             </Link>
@@ -119,13 +118,13 @@ export function Navbar() {
                           <Link
                             to="/profile"
                             onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-card-hover"
                           >
                             <User className="h-4 w-4" /> Profile
                           </Link>
                           <button
                             onClick={() => { signOut(); setDropdownOpen(false); }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-muted"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-card-hover"
                           >
                             <LogOut className="h-4 w-4" /> Sign Out
                           </button>
@@ -135,10 +134,10 @@ export function Navbar() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary">Sign In</Link>
+                    <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-foreground">Sign In</Link>
                     <Link
                       to="/auth/signup"
-                      className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-transform hover:scale-105"
+                      className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-all hover:scale-[1.02] hover:bg-primary-dim"
                     >
                       Join Free
                     </Link>
@@ -154,13 +153,12 @@ export function Navbar() {
               <Search className="h-5 w-5" />
             </button>
             <ThemeToggle />
-            <button onClick={() => setOpen(!open)} className="p-2">
+            <button onClick={() => setOpen(!open)} className="p-2 text-foreground">
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         <AnimatePresence>
           {open && (
             <motion.div
@@ -171,22 +169,22 @@ export function Navbar() {
             >
               <div className="container flex flex-col gap-4 py-4">
                 {links.map((l) => (
-                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary">
+                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground">
                     {l.label}
                   </Link>
                 ))}
                 {user ? (
                   <>
                     {profile?.role === "creator" && (
-                      <Link to="/dashboard" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary">Dashboard</Link>
+                      <Link to="/dashboard" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground">Dashboard</Link>
                     )}
-                    <Link to="/profile" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary">Profile</Link>
+                    <Link to="/profile" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground">Profile</Link>
                     <button onClick={() => { signOut(); setOpen(false); }} className="w-fit text-sm font-medium text-destructive">Sign Out</button>
                   </>
                 ) : (
                   <>
-                    <Link to="/auth/login" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary">Sign In</Link>
-                    <Link to="/auth/signup" onClick={() => setOpen(false)} className="w-fit rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground">Join Free</Link>
+                    <Link to="/auth/login" onClick={() => setOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground">Sign In</Link>
+                    <Link to="/auth/signup" onClick={() => setOpen(false)} className="w-fit rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Join Free</Link>
                   </>
                 )}
               </div>

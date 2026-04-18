@@ -126,15 +126,8 @@ export default function Index() {
   }));
 
   const featured = episodes[0];
-  const categoryColors: Record<string, string> = {
-    "Mental Health": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400",
-    Stories: "bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400",
-    Relationships: "bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-400",
-    Identity: "bg-violet-100 text-violet-800 dark:bg-violet-500/10 dark:text-violet-400",
-    "Work & Life": "bg-sky-100 text-sky-800 dark:bg-sky-500/10 dark:text-sky-400",
-    Society: "bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-400",
-    "Urdu Originals": "bg-teal-100 text-teal-800 dark:bg-teal-500/10 dark:text-teal-400",
-  };
+  const totalEpisodes = episodes.length;
+  const totalCategories = (dbCategories || []).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -144,62 +137,80 @@ export default function Index() {
       />
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-hero paper-texture">
+      {/* Hero — full dark with radial violet glow */}
+      <section className="relative overflow-hidden bg-gradient-hero">
         <div className="container py-20 md:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <motion.p {...fadeUp} className="mb-4 font-heading text-2xl text-primary/70 md:text-3xl" style={{ fontFamily: '"Noto Nastaliq Urdu", serif', direction: "rtl" }}>
+          <div className="mx-auto max-w-[720px] text-center">
+            {/* Pill badge */}
+            <motion.div {...fadeUp}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5 text-xs font-medium text-primary">
+                <Sparkles className="h-3 w-3" />
+                Stories that deserve to be heard
+              </span>
+            </motion.div>
+
+            {/* Main heading */}
+            <motion.h1
+              {...fadeUp}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="mt-6 font-heading text-5xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl"
+            >
+              <span className="block text-foreground">Listen to stories</span>
+              <span className="block text-primary">that move you</span>
+            </motion.h1>
+
+            {/* Urdu subline */}
+            <motion.p
+              {...fadeUp}
+              transition={{ delay: 0.18, duration: 0.6 }}
+              className="mt-5 text-2xl text-primary/80"
+              style={{ fontFamily: '"Noto Nastaliq Urdu", serif', direction: "rtl" }}
+            >
               وہ کہانیاں جو سنی جانی چاہیے
             </motion.p>
-            <motion.h1 {...fadeUp} transition={{ delay: 0.1, duration: 0.6 }} className="mb-6 font-heading text-4xl font-bold leading-tight md:text-6xl">
-              Stories that deserve{" "}
-              <span className="text-gradient-warm">to be heard</span>
-            </motion.h1>
-            <motion.p {...fadeUp} transition={{ delay: 0.2, duration: 0.6 }} className="mx-auto mb-10 max-w-xl text-lg text-muted-foreground">
-              A slow, intentional space for real voices, mental health, and meaningful conversations.
+
+            {/* Subtext */}
+            <motion.p
+              {...fadeUp}
+              transition={{ delay: 0.25, duration: 0.6 }}
+              className="mx-auto mt-6 max-w-xl text-lg font-light text-muted-foreground"
+            >
+              A podcast platform for real voices, mental health, and meaningful conversations — in Urdu and English.
             </motion.p>
-            <motion.div {...fadeUp} transition={{ delay: 0.3, duration: 0.6 }} className="flex flex-wrap items-center justify-center gap-4">
+
+            {/* CTAs */}
+            <motion.div
+              {...fadeUp}
+              transition={{ delay: 0.32, duration: 0.6 }}
+              className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            >
               <Link
                 to="/explore"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 font-medium text-primary-foreground transition-transform hover:scale-105"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-heading font-semibold text-primary-foreground transition-all hover:scale-[1.02] hover:bg-primary-dim"
               >
-                Start Listening <ArrowRight className="h-4 w-4" />
+                <Play className="h-4 w-4 fill-current" />
+                Start Listening
               </Link>
-              <Link to="/auth/signup?role=creator" className="inline-flex items-center gap-2 rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:bg-muted">
+              <Link
+                to="/auth/signup?role=creator"
+                className="inline-flex items-center gap-2 rounded-full border border-elevated bg-transparent px-6 py-3 font-heading font-semibold text-foreground transition-colors hover:bg-elevated"
+              >
                 Become a Creator
               </Link>
             </motion.div>
-            <motion.img
+
+            {/* Social proof strip */}
+            <motion.div
               {...fadeUp}
               transition={{ delay: 0.4, duration: 0.6 }}
-              src={heroIllustration}
-              alt="Person listening peacefully with headphones"
-              className="mx-auto mt-12 w-64 md:w-80"
-              width={1024}
-              height={1024}
-              fetchPriority="high"
-            />
-          </div>
-        </div>
-        <svg className="absolute bottom-0 left-0 right-0 text-background" viewBox="0 0 1440 60" fill="currentColor" preserveAspectRatio="none">
-          <path d="M0,40 C480,80 960,0 1440,40 L1440,60 L0,60 Z" />
-        </svg>
-      </section>
-
-      {/* Social proof strip */}
-      <section className="border-b border-border bg-card/30">
-        <div className="container py-6">
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-2">
-              <Globe2 className="h-4 w-4 text-primary" />
-              Listened to by storytellers in 12 countries
-            </span>
-            <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 md:inline-block" />
-            <span>
-              <span className="font-semibold text-foreground">{(playsToday ?? 0).toLocaleString()}</span> episodes streamed today
-            </span>
-            <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/40 md:inline-block" />
-            <span>Available on Web · iOS (coming soon) · Android (coming soon)</span>
+              className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-muted-foreground/70"
+            >
+              <span>Join {(2400 + (playsToday ?? 0)).toLocaleString()}+ listeners</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>{totalEpisodes || 5} episodes</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>{totalCategories || 7} categories</span>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -342,15 +353,15 @@ export default function Index() {
       )}
 
       {/* Categories */}
-      <section className="bg-card py-16">
+      <section className="bg-surface py-16">
         <div className="container">
-          <h2 className="mb-8 text-center font-heading text-2xl font-bold md:text-3xl">Explore by Category</h2>
-          <div className="flex flex-wrap justify-center gap-3">
+          <h2 className="mb-8 text-center font-heading text-3xl font-bold tracking-tight md:text-4xl">Explore by Category</h2>
+          <div className="flex flex-wrap justify-center gap-2">
             {(dbCategories || []).map((cat) => (
               <Link
                 key={cat.id}
                 to={`/explore?category=${cat.name}`}
-                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-transform hover:scale-105 ${categoryColors[cat.name] || "bg-muted text-muted-foreground"}`}
+                className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-all hover:scale-[1.03] hover:border-primary/50 hover:bg-primary/15"
               >
                 {cat.name}
               </Link>
