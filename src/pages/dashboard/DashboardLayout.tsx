@@ -57,10 +57,10 @@ export default function DashboardLayout() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "border-l-2 border-primary bg-primary/10 pl-[10px] text-primary"
+                    : "border-l-2 border-transparent text-muted-foreground hover:bg-card-hover hover:text-foreground"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
