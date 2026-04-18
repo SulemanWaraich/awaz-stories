@@ -10,12 +10,14 @@ import { toast } from "sonner";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get("role") === "creator" ? "creator" : "listener";
   const { user, profile, loading: authLoading } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<"listener" | "creator">("listener");
+  const [role, setRole] = useState<"listener" | "creator">(initialRole);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
