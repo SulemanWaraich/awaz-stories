@@ -138,17 +138,28 @@ export function GlobalAudioPlayer() {
             animate={{ y: 0 }}
             exit={{ y: 100 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg shadow-soft transition-colors duration-300"
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/20 bg-[hsl(var(--player-bg))]/95 backdrop-blur-2xl"
           >
-            {/* Progress bar */}
-            <div className="h-1 w-full cursor-pointer bg-muted" onClick={handleSeek} role="progressbar" aria-label="Episode progress" aria-valuenow={progress}>
-              <div className="h-full bg-primary transition-all duration-150" style={{ width: `${progress}%` }} />
+            {/* Progress bar — gradient primary → accent */}
+            <div
+              className="group/bar h-[3px] w-full cursor-pointer bg-elevated"
+              onClick={handleSeek}
+              role="progressbar"
+              aria-label="Episode progress"
+              aria-valuenow={progress}
+            >
+              <div
+                className="h-full transition-all duration-150"
+                style={{
+                  width: `${progress}%`,
+                  background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))",
+                }}
+              />
             </div>
 
             <div className="container flex items-center gap-4 py-3">
-              {/* Tap to expand on mobile */}
               <button onClick={() => setExpanded(true)} className="flex items-center gap-3 sm:contents" aria-label="Expand player">
-                <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
                   {currentEpisode.artworkUrl ? (
                     <img src={currentEpisode.artworkUrl} alt={currentEpisode.title} className="h-full w-full object-cover" />
                   ) : (
@@ -158,12 +169,11 @@ export function GlobalAudioPlayer() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1 sm:flex-initial">
-                  <p className="truncate text-sm font-medium font-heading">{currentEpisode.title}</p>
+                  <p className="truncate font-heading text-sm font-semibold text-foreground">{currentEpisode.title}</p>
                   <p className="truncate text-xs text-muted-foreground">{currentEpisode.hostName}</p>
                 </div>
               </button>
 
-              {/* Controls */}
               <div className="flex items-center gap-2">
                 <button onClick={playPrevious} className="hidden p-2 text-muted-foreground transition-colors hover:text-foreground sm:block" aria-label="Previous">
                   <SkipBack className="h-4 w-4" />
@@ -171,31 +181,28 @@ export function GlobalAudioPlayer() {
                 <button
                   onClick={togglePlay}
                   disabled={audioError}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-105 disabled:opacity-50"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-[1.08] hover:bg-primary-dim disabled:opacity-50"
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
-                  <PlayPauseIcon className={`h-4 w-4 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-0.5" : ""}`} />
+                  <PlayPauseIcon className={`h-4 w-4 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-0.5 fill-current" : ""}`} />
                 </button>
                 <button onClick={playNext} className="hidden p-2 text-muted-foreground transition-colors hover:text-foreground sm:block" aria-label="Next">
                   <SkipForward className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Time */}
-              <span className="hidden text-xs text-muted-foreground sm:block">
+              <span className="hidden text-xs tabular-nums text-muted-foreground sm:block">
                 {formatDuration(Math.floor(currentTime))} / {formatDuration(Math.floor(duration))}
               </span>
 
-              {/* Speed */}
               <button
                 onClick={cycleRate}
-                className="hidden rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground md:block"
+                className="hidden rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground md:block"
                 aria-label={`Playback speed ${playbackRate}x`}
               >
                 {playbackRate}x
               </button>
 
-              {/* Volume */}
               <div className="hidden items-center gap-1 md:flex">
                 <button onClick={() => setVolume(volume === 0 ? 0.8 : 0)} className="p-1 text-muted-foreground hover:text-foreground" aria-label={volume === 0 ? "Unmute" : "Mute"}>
                   {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -212,7 +219,6 @@ export function GlobalAudioPlayer() {
                 />
               </div>
 
-              {/* Close */}
               <button
                 onClick={handleClose}
                 className="p-1 text-muted-foreground hover:text-foreground"
@@ -270,10 +276,16 @@ export function GlobalAudioPlayer() {
 
               {/* Progress */}
               <div className="mb-2 w-full max-w-sm">
-                <div className="h-1.5 w-full cursor-pointer rounded-full bg-muted" onClick={handleSeek}>
-                  <div className="h-full rounded-full bg-primary transition-all duration-150" style={{ width: `${progress}%` }} />
+                <div className="h-[3px] w-full cursor-pointer rounded-full bg-elevated" onClick={handleSeek}>
+                  <div
+                    className="h-full rounded-full transition-all duration-150"
+                    style={{
+                      width: `${progress}%`,
+                      background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)))",
+                    }}
+                  />
                 </div>
-                <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                <div className="mt-1 flex justify-between text-xs tabular-nums text-muted-foreground">
                   <span>{formatDuration(Math.floor(currentTime))}</span>
                   <span>{formatDuration(Math.floor(duration))}</span>
                 </div>
@@ -287,10 +299,10 @@ export function GlobalAudioPlayer() {
                 <button
                   onClick={togglePlay}
                   disabled={audioError}
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg disabled:opacity-50"
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-warm transition-transform hover:scale-[1.05] hover:bg-primary-dim disabled:opacity-50"
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
-                  <PlayPauseIcon className={`h-7 w-7 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-1" : ""}`} />
+                  <PlayPauseIcon className={`h-7 w-7 ${buffering ? "animate-spin" : ""} ${!isPlaying && !buffering ? "ml-1 fill-current" : ""}`} />
                 </button>
                 <button onClick={() => skip(15)} className="p-2 text-muted-foreground hover:text-foreground" aria-label="Forward 15 seconds">
                   <RotateCw className="h-6 w-6" />
