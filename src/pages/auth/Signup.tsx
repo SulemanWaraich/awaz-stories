@@ -39,31 +39,39 @@ export default function Signup() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { display_name: displayName, role },
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      if (error) throw error;
-      toast.success("Account created! Check your email to confirm your account.");
-    } catch (err: any) {
-      if (err.message?.includes("already registered")) {
-        toast.error("This email is already registered. Try signing in instead.");
-      } else {
-        toast.error(err.message || "Something went wrong");
-      }
-    } finally {
-      setLoading(false);
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validate()) return;
+  setLoading(true);
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { display_name: displayName, role },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+
+    // If session exists immediately, email confirmation is disabled — navigate directly
+    if (data.session) {
+      toast.success("Account created! Welcome 🎉");
+      navigate(role === "creator" ? "/dashboard" : "/explore", { replace: true });
+    } else {
+      // Confirmation email was sent
+      toast.success("Check your email to confirm your account.");
     }
-  };
+  } catch (err: any) {
+    if (err.message?.includes("already registered")) {
+      toast.error("This email is already registered. Try signing in instead.");
+    } else {
+      toast.error(err.message || "Something went wrong");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-background">
